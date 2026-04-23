@@ -29,32 +29,51 @@ export default function Login() {
 
   const router = useRouter();
 
- const completeLogin = (data: any) => {
-  if (!data?.token) {
-    console.error("No token in login response:", data);
-    alert("No token returned from server");
-    return;
-  }
+  const completeLogin = (data: any) => {
+    if (!data?.token) {
+      throw new Error("No authentication token received from server");
+    }
 
-  const user = data.user || {};
-  const userData = {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    userType: user.userType || user.user_type || user.role || "undefined",
-  };
+    setCookie("token", data.token, {
+      maxAge: 60 * 60 * 24 * 7,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+    });
 
-  document.cookie = `token=${encodeURIComponent(data.token)}; Path=/; Max-Age=${60 * 60 * 24 * 7}; SameSite=Lax; Secure`;
-  document.cookie = `user=${encodeURIComponent(JSON.stringify(userData))}; Path=/; Max-Age=${60 * 60 * 24 * 7}; SameSite=Lax; Secure`;
+    const user = data.user || {};
+    const userData = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      userType: user.userType || user.user_type || user.role || "undefined",
+    };
 
-  console.log("login response data:", data);
-  console.log("document.cookie after write:", document.cookie);
-  alert("Cookie after login: " + document.cookie);
+    setCookie("user", JSON.stringify(userData), {
+      maxAge: 60 * 60 * 24 * 7,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+    });
 
-  setTimeout(() => {
-    window.location.href = "/home";
-  }, 1000);
-};
+    let redirectUrl: string | null = null;
+
+    if (typeof window !== "undefined") {
+      redirectUrl = new URLSearchParams(window.location.search).get(
+        "redirect"
+      );
+
+      if (!redirectUrl) {
+        try {
+          redirectUrl = sessionStorage.getItem("auth_redirect");
+          if (redirectUrl) {
+            sessionStorage.removeItem("auth_redirect");
+          }
+        } catch {
+          // Ignore sessionStorage errors
+        }
+      }
+    }
 
     const isSameSite = (url: string): boolean => {
       if (typeof window === "undefined") return false;
@@ -77,36 +96,29 @@ export default function Login() {
     };
 
     // If backend indicates a mandatory password change (first login with temp password),
-// always route to the change-password screen instead of the normal target.
-if (data?.mustChangePassword) {
-  setTimeout(() => {
-    window.location.href = "/auth/change-password?firstLogin=1";
-  }, 100);
-  return;
-}
-
-if (redirectUrl) {
-  const decodedUrl = decodeURIComponent(redirectUrl);
-
-  if (isSameSite(decodedUrl)) {
-    if (isActionPage(decodedUrl)) {
-      setTimeout(() => {
-        window.location.href = decodedUrl;
-      }, 100);
-    } else {
-      setTimeout(() => {
-        window.location.href = "/home";
-      }, 100);
+    // always route to the change-password screen instead of the normal target.
+    if (data?.mustChangePassword) {
+      router.push("/auth/change-password?firstLogin=1");
+      return;
     }
-  } else {
-    window.location.href = decodedUrl;
-  }
-} else {
-  setTimeout(() => {
-    window.location.href = "/home";
-  }, 100);
-}
+
+    if (redirectUrl) {
+      const decodedUrl = decodeURIComponent(redirectUrl);
+
+      if (isSameSite(decodedUrl)) {
+        if (isActionPage(decodedUrl)) {
+          router.push(decodedUrl);
+        } else {
+          router.push("/home");
+        }
+      } else {
+        window.location.href = decodedUrl;
+      }
+    } else {
+      router.push("/home");
+    }
   };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
