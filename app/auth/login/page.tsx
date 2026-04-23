@@ -73,7 +73,7 @@ export default function Login() {
           // Ignore sessionStorage errors
         }
       }
-    }
+    };
 
     const isSameSite = (url: string): boolean => {
       if (typeof window === "undefined") return false;
