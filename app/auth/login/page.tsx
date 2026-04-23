@@ -125,7 +125,7 @@ if (redirectUrl) {
     window.location.href = "/home";
   }, 100);
 }
-
+  };
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
