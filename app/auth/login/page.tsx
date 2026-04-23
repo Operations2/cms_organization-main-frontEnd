@@ -96,28 +96,35 @@ export default function Login() {
     };
 
     // If backend indicates a mandatory password change (first login with temp password),
-    // always route to the change-password screen instead of the normal target.
-    if (data?.mustChangePassword) {
-      router.push("/auth/change-password?firstLogin=1");
-      return;
-    }
+// always route to the change-password screen instead of the normal target.
+if (data?.mustChangePassword) {
+  setTimeout(() => {
+    window.location.href = "/auth/change-password?firstLogin=1";
+  }, 100);
+  return;
+}
 
-    if (redirectUrl) {
-      const decodedUrl = decodeURIComponent(redirectUrl);
+if (redirectUrl) {
+  const decodedUrl = decodeURIComponent(redirectUrl);
 
-      if (isSameSite(decodedUrl)) {
-        if (isActionPage(decodedUrl)) {
-          router.push(decodedUrl);
-        } else {
-          router.push("/home");
-        }
-      } else {
+  if (isSameSite(decodedUrl)) {
+    if (isActionPage(decodedUrl)) {
+      setTimeout(() => {
         window.location.href = decodedUrl;
-      }
+      }, 100);
     } else {
-      router.push("/home");
+      setTimeout(() => {
+        window.location.href = "/home";
+      }, 100);
     }
-  };
+  } else {
+    window.location.href = decodedUrl;
+  }
+} else {
+  setTimeout(() => {
+    window.location.href = "/home";
+  }, 100);
+}
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
