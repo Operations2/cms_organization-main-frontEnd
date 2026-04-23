@@ -29,51 +29,32 @@ export default function Login() {
 
   const router = useRouter();
 
-  const completeLogin = (data: any) => {
-    if (!data?.token) {
-      throw new Error("No authentication token received from server");
-    }
+ const completeLogin = (data: any) => {
+  if (!data?.token) {
+    console.error("No token in login response:", data);
+    alert("No token returned from server");
+    return;
+  }
 
-    setCookie("token", data.token, {
-      maxAge: 60 * 60 * 24 * 7,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-    });
+  const user = data.user || {};
+  const userData = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    userType: user.userType || user.user_type || user.role || "undefined",
+  };
 
-    const user = data.user || {};
-    const userData = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      userType: user.userType || user.user_type || user.role || "undefined",
-    };
+  document.cookie = `token=${encodeURIComponent(data.token)}; Path=/; Max-Age=${60 * 60 * 24 * 7}; SameSite=Lax; Secure`;
+  document.cookie = `user=${encodeURIComponent(JSON.stringify(userData))}; Path=/; Max-Age=${60 * 60 * 24 * 7}; SameSite=Lax; Secure`;
 
-    setCookie("user", JSON.stringify(userData), {
-      maxAge: 60 * 60 * 24 * 7,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-    });
+  console.log("login response data:", data);
+  console.log("document.cookie after write:", document.cookie);
+  alert("Cookie after login: " + document.cookie);
 
-    let redirectUrl: string | null = null;
-
-    if (typeof window !== "undefined") {
-      redirectUrl = new URLSearchParams(window.location.search).get(
-        "redirect"
-      );
-
-      if (!redirectUrl) {
-        try {
-          redirectUrl = sessionStorage.getItem("auth_redirect");
-          if (redirectUrl) {
-            sessionStorage.removeItem("auth_redirect");
-          }
-        } catch {
-          // Ignore sessionStorage errors
-        }
-      }
-    };
+  setTimeout(() => {
+    window.location.href = "/home";
+  }, 1000);
+};
 
     const isSameSite = (url: string): boolean => {
       if (typeof window === "undefined") return false;
